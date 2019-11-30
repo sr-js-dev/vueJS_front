@@ -1,0 +1,61 @@
+# This is a sample build configuration for Javascript.
+# Check our guides at https://confluence.atlassian.com/x/VYk8Lw for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+image: node:6.9.4
+
+pipelines:
+  default:
+    - step:
+        script: # Modify the commands below to build your repository.
+          - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.27.5
+          - export PATH=$HOME/.yarn/bin:$PATH
+          - yarn
+          - npm run build
+
+  branches:
+    development:
+      - step:
+          script:
+            - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.27.5
+            - export PATH=$HOME/.yarn/bin:$PATH
+            - yarn
+            - npm run build:dev
+            - mkdir -p ~/.ssh
+            - ssh-keyscan -t rsa 52.50.55.78 >> ~/.ssh/known_hosts
+            - (umask 077; echo $PRIVATE_KEY | base64 --decode > ~/.ssh/id_rsa)
+            - scp -pr ./dist/ ubuntu@52.50.55.78:/home/ubuntu/dist_admin_v2
+            - ssh ubuntu@52.50.55.78 "sudo rm -rf /opt/admin_v2; sudo mv dist_admin_v2 /opt/admin_v2"
+
+    stage:
+      - step:
+          script:
+            - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.27.5
+            - export PATH=$HOME/.yarn/bin:$PATH
+            - yarn
+            - npm run build:stage
+            - mkdir -p ~/.ssh
+            - ssh-keyscan -t rsa 54.77.194.185 >> ~/.ssh/known_hosts
+            - (umask 077; echo $PRIVATE_KEY | base64 --decode > ~/.ssh/id_rsa)
+            - scp -pr ./dist/ ubuntu@54.77.194.185:/home/ubuntu/dist_admin_v2
+            - ssh ubuntu@54.77.194.185 "sudo rm -rf /opt/admin_v2; sudo mv dist_admin_v2 /opt/admin_v2"
+
+#    release:
+#      - step:
+#          script:
+#            - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.27.5
+#            - export PATH=$HOME/.yarn/bin:$PATH
+#            - yarn
+#            - npm run build:prod
+#            - mkdir -p ~/.ssh
+#            - ssh-keyscan -t rsa 52.50.55.78 >> ~/.ssh/known_hosts
+#            - (umask 077; echo $PRIVATE_KEY | base64 --decode > ~/.ssh/id_rsa)
+#            - scp -pr ./dist/ ubuntu@52.50.55.78:/home/ubuntu/release
+
+# Script to deploy
+#         - mkdir -p ~/.ssh
+#         - ssh-keyscan -t rsa 52.50.55.78 >> ~/.ssh/known_hosts
+#         - (umask 077; echo $PRIVATE_KEY | base64 --decode > ~/.ssh/id_rsa)
+#         - scp dist.zip ubuntu@52.50.55.78:/home/ubuntu
+#         - ssh ubuntu@52.50.55.78 "unzip dist.zip && sudo rm -rf /opt/website; sudo mv dist /opt/website && rm dist.zip"
